@@ -1,10 +1,7 @@
 import pytest
-from log_processor import (
-    parse_log_line,
-    compute_error_rate,
-    compute_avg_response_time,
-    count_unique_users,
-)
+from parser import parse_log_line
+from aggregator import LogAggregator
+
 
 # -------- parse_log_line --------
 
@@ -40,11 +37,13 @@ def test_error_rate():
         {"status_code": 200},
         {"status_code": 500},
     ]
-    assert compute_error_rate(logs) == 0.5
+    agg = LogAggregator(logs)
+    assert agg.error_rate() == 0.5
 
 
 def test_error_rate_empty():
-    assert compute_error_rate([]) == 0.0
+    agg = LogAggregator([])
+    assert agg.error_rate() == 0.0
 
 
 # -------- compute_avg_response_time --------
@@ -54,11 +53,13 @@ def test_avg_response_time():
         {"response_time": 100},
         {"response_time": 300},
     ]
-    assert compute_avg_response_time(logs) == 200.0
+    agg = LogAggregator(logs)
+    assert agg.avg_response_time() == 200.0
 
 
 def test_avg_response_time_empty():
-    assert compute_avg_response_time([]) == 0.0
+    agg = LogAggregator([])
+    assert agg.avg_response_time() == 0.0
 
 
 # -------- count_unique_users --------
@@ -69,8 +70,35 @@ def test_unique_users():
         {"user_id": "u2"},
         {"user_id": "u1"},
     ]
-    assert count_unique_users(logs) == 2
+    agg = LogAggregator(logs)
+    assert agg.unique_users() == 2
 
 
 def test_unique_users_empty():
-    assert count_unique_users([]) == 0
+    logs =[]
+    agg = LogAggregator(logs)
+    assert agg.unique_users() == 0
+
+def test_parse_non_numeric_status():
+    with pytest.raises(ValueError):
+        parse_log_line("2026 | user | abc | 100")
+
+def test_parse_non_numeric_response():
+    with pytest.raises(ValueError):
+        parse_log_line("2026 | user | 200 | fast")
+
+def test_parse_extra_delimiters():
+    with pytest.raises(ValueError):
+        parse_log_line("2026 | user | 200 | 100 | extra")
+
+def test_error_rate_all_errors():
+    logs = [
+        {"status_code": 500},
+        {"status_code": 404},
+    ]
+    agg = LogAggregator(logs)
+    assert agg.error_rate() == 1.0
+
+def test_parse_zero_response_time():
+    result = parse_log_line("2026-02-15T12:00:00 | user_1 | 200 | 0")
+    assert result["response_time"] == 0.0
