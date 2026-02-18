@@ -89,7 +89,7 @@ def test_parse_non_numeric_response():
 
 def test_parse_extra_delimiters():
     with pytest.raises(ValueError):
-        parse_log_line("2026 | user | 200 | 100 | extra")
+        parse_log_line("2026 | user | 200 | 100 | extra | extra")
 
 def test_error_rate_all_errors():
     logs = [
