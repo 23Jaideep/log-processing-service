@@ -110,3 +110,5 @@ def test_state_leakage():
     a1.add_log({"status_code": 500, "response_time": 100, "user_id": "u1"})
 
     assert a2.error_rate() == 0.0
+
+
