@@ -34,8 +34,8 @@ def test_parse_negative_response_time():
 
 def test_error_rate():
     logs = [
-        {"status_code": 200},
-        {"status_code": 500},
+        {"timestamp": "2026-02-15T12:00:00", "user_id": "u1", "status_code": 200, "response_time": 100},
+        {"user_id": "u1", "status_code": 500, "response_time": 100}
     ]
     agg = LogAggregator(logs)
     assert agg.error_rate() == 0.5
@@ -50,8 +50,8 @@ def test_error_rate_empty():
 
 def test_avg_response_time():
     logs = [
-        {"response_time": 100},
-        {"response_time": 300},
+        {"timestamp": "2026-02-15T12:00:00", "user_id": "u1", "status_code": 200, "response_time": 100},
+        {"user_id": "u1", "status_code": 200, "response_time": 300}
     ]
     agg = LogAggregator(logs)
     assert agg.avg_response_time() == 200.0
@@ -66,9 +66,9 @@ def test_avg_response_time_empty():
 
 def test_unique_users():
     logs = [
-        {"user_id": "u1"},
-        {"user_id": "u2"},
-        {"user_id": "u1"},
+        {"timestamp": "2026-02-15T12:00:00", "user_id": "u1", "status_code": 200, "response_time": 100},
+        {"timestamp": "2026-02-15T12:00:01", "user_id": "u2", "status_code": 200, "response_time": 100},
+        {"timestamp": "2026-02-15T12:00:02", "user_id": "u1", "status_code": 200, "response_time": 100}
     ]
     agg = LogAggregator(logs)
     assert agg.unique_users() == 2
@@ -93,8 +93,8 @@ def test_parse_extra_delimiters():
 
 def test_error_rate_all_errors():
     logs = [
-        {"status_code": 500},
-        {"status_code": 404},
+        {"timestamp": "2026-02-15T12:00:00", "user_id": "u1", "status_code": 500, "response_time": 100},
+        {"timestamp": "2026-02-15T12:00:01", "user_id": "u2", "status_code": 400, "response_time": 150},
     ]
     agg = LogAggregator(logs)
     assert agg.error_rate() == 1.0
@@ -102,3 +102,11 @@ def test_error_rate_all_errors():
 def test_parse_zero_response_time():
     result = parse_log_line("2026-02-15T12:00:00 | user_1 | 200 | 0")
     assert result["response_time"] == 0.0
+
+def test_state_leakage():
+    a1 = LogAggregator()
+    a2 = LogAggregator()
+
+    a1.add_log({"status_code": 500, "response_time": 100, "user_id": "u1"})
+
+    assert a2.error_rate() == 0.0
