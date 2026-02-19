@@ -1,5 +1,8 @@
 import subprocess
 import time
+from telemetry import SessionTracker
+import re
+tracker = SessionTracker()
 
 
 def run_tests(file):
@@ -8,51 +11,66 @@ def run_tests(file):
         capture_output=True,
         text=True
     )
-    print(result.stdout)   # <-- add this line
+    output = result.stdout
+    print(output)   # <-- add this line
     print(result.stderr)
-    return result.returncode
+    return result.returncode, output
+
+import re
+
+def extract_passed_tests(output):
+    match = re.search(r"(\\d+) passed", output)
+    if match:
+        return int(match.group(1))
+    return 0
 
 
 def simulate_session():
     start = time.time()
-    runs = 0
 
-    # Phase 1 — Core
+    # -------- Phase 1: Core --------
     while True:
         input("Press Enter to run core tests...")
-        runs += 1
 
-        code = run_tests("test_core.py")
+        code, output = run_tests("test_core.py")
 
-        if code == 0:
+        passed_tests = extract_passed_tests(output)
+        tracker.record_progress(passed_tests)
+
+        passed = (code == 0)
+        tracker.record_core_run(passed)
+
+        if passed:
+            print("Core tests PASSED\n")
             break
+        else:
+            print("Core tests FAILED\n")
 
-    core_end = time.time()
-
-    print("\nCore tests passed!")
-    print("Core runs:", runs)
-    print("Core time:", core_end - start)
-
-    # Phase 2 — Mutation
-    print("\nRunning mutation tests...")
-    mutation_runs = 0
+    # -------- Phase 2: Mutation --------
+    print("Running mutation tests...")
 
     while True:
         input("Press Enter to run mutation tests...")
-        mutation_runs += 1
 
-        mutation_code = run_tests("test_mutation.py")
+        mutation_code, mutation_output = run_tests("test_mutation.py")
+        passed_mutation_tests = extract_passed_tests(mutation_output)
+        tracker.record_progress(passed_mutation_tests)
+        passed = (mutation_code == 0)
+        tracker.record_mutation_run(passed)
 
-        if mutation_code == 0:
-            print("Mutation tests PASSED.")
+        if passed:
+            print("Mutation tests PASSED\n")
             break
         else:
             print("Mutation tests FAILED\n")
-    print("Mutation runs:", mutation_runs)
 
     end = time.time()
 
     print("\nTotal session time:", end - start)
+    print(tracker.summary())
 
 
-simulate_session()
+
+if __name__ == "__main__":
+    simulate_session()
+
