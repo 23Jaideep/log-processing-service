@@ -1,9 +1,7 @@
 import subprocess
 import time
-from telemetry import SessionTracker
+from core.telementry.tracker import SessionTracker
 import re
-tracker = SessionTracker()
-
 
 def run_tests(file):
     result = subprocess.run(
@@ -25,14 +23,15 @@ def extract_passed_tests(output):
     return 0
 
 
-def simulate_session():
+def run_session(task_path: str):
+    tracker = SessionTracker()
     start = time.time()
 
     # -------- Phase 1: Core --------
     while True:
         input("Press Enter to run core tests...")
 
-        code, output = run_tests("test_core.py")
+        code, output = run_tests(f"{task_path}/tests/test_core.py")
 
         passed_tests = extract_passed_tests(output)
         tracker.record_progress(passed_tests)
@@ -52,7 +51,7 @@ def simulate_session():
     while True:
         input("Press Enter to run mutation tests...")
 
-        mutation_code, mutation_output = run_tests("test_mutation.py")
+        mutation_code, mutation_output = run_tests(f"{task_path}/tests/test_mutation.py")
         passed_mutation_tests = extract_passed_tests(mutation_output)
         tracker.record_progress(passed_mutation_tests)
         passed = (mutation_code == 0)
@@ -72,5 +71,4 @@ def simulate_session():
 
 
 if __name__ == "__main__":
-    simulate_session()
-
+    run_session("tasks/log_parser_v1")

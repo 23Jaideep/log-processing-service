@@ -1,6 +1,6 @@
 import pytest
-from parser import parse_log_line
-from aggregator import LogAggregator
+from tasks.log_parser_v1.src.parser import parse_log_line
+from tasks.log_parser_v1.src.aggregator import LogAggregator
 
 
 # -------- parse_log_line --------
