@@ -1,8 +1,15 @@
 import time
+from core.telementry.analyzer import (
+    compute_time_between_runs,
+    compute_recovery,
+    compute_progress,
+    compute_scope_violations
+)
 
 
 class SessionTracker:
     def __init__(self):
+        self.events = []
         self.start_time = time.time()
 
         self.core_runs = 0
@@ -13,6 +20,9 @@ class SessionTracker:
 
         self.last_passed_tests = 0
         self.regressions = 0
+
+    def log_event(self, event: dict):
+        self.events.append(event)
     
     def record_progress(self, passed_tests):
         if passed_tests < self.last_passed_tests:
@@ -30,6 +40,8 @@ class SessionTracker:
         if passed and self.mutation_pass_time is None:
             self.mutation_pass_time = time.time()
 
+    
+
     def summary(self):
         return {
             "core_runs": self.core_runs,
@@ -42,7 +54,11 @@ class SessionTracker:
             "time_to_mutation_pass": (
                 self.mutation_pass_time - self.start_time
                 if self.mutation_pass_time else None
-            )
+            ),
+            "time_between_runs": compute_time_between_runs(self.events),
+            "recovery": compute_recovery(self.events),
+            "progress": compute_progress(self.events),
+            "scope": compute_scope_violations(self.events)
         }
     
     

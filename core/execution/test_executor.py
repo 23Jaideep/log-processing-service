@@ -20,7 +20,7 @@ def run_tests(file):
 import re
 
 def extract_passed_tests(output):
-    match = re.search(r"(\\d+) passed", output)
+    match = re.search(r"(\d+) passed", output)
     if match:
         return int(match.group(1))
     return 0
@@ -47,6 +47,12 @@ def run_session(task_path: str):
 
         create_snapshot(task_path, new_snapshot)
 
+        tracker.log_event({
+        "timestamp": time.time(),
+        "event_type": "edit_snapshot",
+        "snapshot_id": snap_id
+        }) 
+
         diff = compute_diff(prev_snapshot, new_snapshot)
 
         print("Telemetry diff:", diff)
@@ -58,6 +64,15 @@ def run_session(task_path: str):
 
         passed = (code == 0)
         tracker.record_core_run(passed)
+
+        tracker.log_event({
+        "timestamp": time.time(),
+        "event_type": "test_run",
+        "phase": "core",
+        "passed": passed,
+        "tests_passed": passed_tests,
+        "diff": diff
+        })
 
         if passed:
             print("Core tests PASSED\n")
@@ -78,6 +93,12 @@ def run_session(task_path: str):
 
         create_snapshot(task_path, new_snapshot)
 
+        tracker.log_event({
+       "timestamp": time.time(),
+       "event_type": "edit_snapshot",
+       "snapshot_id": snap_id
+     })
+
         diff = compute_diff(prev_snapshot, new_snapshot)
 
         print("Telemetry diff:", diff)
@@ -88,6 +109,15 @@ def run_session(task_path: str):
         tracker.record_progress(passed_mutation_tests)
         passed = (mutation_code == 0)
         tracker.record_mutation_run(passed)
+
+        tracker.log_event({
+        "timestamp": time.time(),
+        "event_type": "test_run",
+        "phase": "mutation",
+        "passed": passed,
+        "tests_passed": passed_mutation_tests,
+         "diff": diff
+        })
 
         if passed:
             print("Mutation tests PASSED\n")
