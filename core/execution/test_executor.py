@@ -1,11 +1,14 @@
 import subprocess
 import time
+from core.telementry import tracker
 from core.telementry.tracker import SessionTracker
 import re
 from core.telementry.snapshot import create_snapshot
 from core.telementry.diff_analyzer import compute_diff
 import os
 import yaml
+import uuid
+from core.storage.db import init_db, save_candidate, save_session, save_events
 
 def run_tests(file):
     result = subprocess.run(
@@ -30,8 +33,11 @@ def load_task_config(task_path):
         with open(f"{task_path}/task.yaml", "r") as f:
             return yaml.safe_load(f)
 
-def run_session(task_path: str):
+def run_session(task_path: str, candidate_id: str):
     tracker = SessionTracker()
+    init_db()  
+    session_id = str(uuid.uuid4())
+    candidate_id
     config = load_task_config(task_path)
 
     core_test = config["entry_tests"]
@@ -56,6 +62,7 @@ def run_session(task_path: str):
         create_snapshot(task_path, new_snapshot)
 
         tracker.log_event({
+        "session_id": session_id,
         "timestamp": time.time(),
         "event_type": "edit_snapshot",
         "snapshot_id": snap_id
@@ -74,6 +81,7 @@ def run_session(task_path: str):
         tracker.record_core_run(passed)
 
         tracker.log_event({
+        "session_id": session_id,
         "timestamp": time.time(),
         "event_type": "test_run",
         "phase": "core",
@@ -102,6 +110,7 @@ def run_session(task_path: str):
         create_snapshot(task_path, new_snapshot)
 
         tracker.log_event({
+        "session_id": session_id,
        "timestamp": time.time(),
        "event_type": "edit_snapshot",
        "snapshot_id": snap_id
@@ -119,6 +128,7 @@ def run_session(task_path: str):
         tracker.record_mutation_run(passed)
 
         tracker.log_event({
+        "session_id": session_id,
         "timestamp": time.time(),
         "event_type": "test_run",
         "phase": "mutation",
@@ -136,6 +146,21 @@ def run_session(task_path: str):
     end = time.time()
 
     print("\nTotal session time:", end - start)
-    print(tracker.summary())
+    summary = tracker.summary()
+
+    session = {
+        "session_id": session_id,
+        "candidate_id": candidate_id,
+        "task_name": task_path,
+        "start_time": start,
+        "end_time": end,
+        "summary": summary
+    }
+
+    save_candidate(candidate_id)
+    save_session(session)
+    save_events(tracker.events)
+
+    print(summary)
 
 
