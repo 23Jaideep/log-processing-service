@@ -5,6 +5,7 @@ import re
 from core.telementry.snapshot import create_snapshot
 from core.telementry.diff_analyzer import compute_diff
 import os
+import yaml
 
 def run_tests(file):
     result = subprocess.run(
@@ -25,9 +26,16 @@ def extract_passed_tests(output):
         return int(match.group(1))
     return 0
 
+def load_task_config(task_path):
+        with open(f"{task_path}/task.yaml", "r") as f:
+            return yaml.safe_load(f)
 
 def run_session(task_path: str):
     tracker = SessionTracker()
+    config = load_task_config(task_path)
+
+    core_test = config["entry_tests"]
+    mutation_test = config["mutation_tests"]
     snapshot_base = "snapshots"
     os.makedirs(snapshot_base, exist_ok=True)
 
@@ -40,7 +48,7 @@ def run_session(task_path: str):
     while True:
         input("Press Enter to run core tests...")
 
-        code, output = run_tests(f"{task_path}/tests/test_core.py")
+        code, output = run_tests(f"{task_path}/{core_test}")
 
         snap_id += 1
         new_snapshot = f"{snapshot_base}/snap_{snap_id}"
@@ -86,7 +94,7 @@ def run_session(task_path: str):
     while True:
         input("Press Enter to run mutation tests...")
 
-        mutation_code, mutation_output = run_tests(f"{task_path}/tests/test_mutation.py")
+        mutation_code, mutation_output = run_tests(f"{task_path}/{mutation_test}")
 
         snap_id += 1
         new_snapshot = f"{snapshot_base}/snap_{snap_id}"
@@ -131,6 +139,3 @@ def run_session(task_path: str):
     print(tracker.summary())
 
 
-
-if __name__ == "__main__":
-    run_session("tasks/log_parser_v1")
