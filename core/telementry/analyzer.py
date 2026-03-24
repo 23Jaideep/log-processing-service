@@ -24,22 +24,20 @@ def compute_time_between_runs(events):
 # ---- Recovery ----
 def compute_recovery(events):
     recoveries = []
-    last_pass_time = None
-    in_regression = False
+    regression_start = None
 
     for e in events:
         if e["event_type"] != "test_run":
             continue
 
-        if e["passed"]:
-            if in_regression:
-                recoveries.append(e["timestamp"] - last_pass_time)
-                in_regression = False
-            last_pass_time = e["timestamp"]
+        if not e["passed"]:
+            if regression_start is None:
+                regression_start = e["timestamp"]
 
-        else:
-            if last_pass_time is not None:
-                in_regression = True
+        else:  # passed
+            if regression_start is not None:
+                recoveries.append(e["timestamp"] - regression_start)
+                regression_start = None
 
     return recoveries
 

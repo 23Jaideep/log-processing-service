@@ -21,14 +21,14 @@ def parse_log_line(line: str) -> dict:
         response_time = float(response_str)
     except ValueError:
         raise ValueError("Response time must be numeric")
-    
-    if response_time < 0:
-        raise ValueError("Response time cannot be negative")
-
     return{
         "timestamp": timestamp,
         "user_id": user_id,
         "status_code": status_code,
         "response_time": response_time    
     } 
+    if response_time < 0:
+        raise ValueError("Response time cannot be negative")
+
+    
 

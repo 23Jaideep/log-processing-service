@@ -1,5 +1,7 @@
 class LogAggregator:
-    def __init__(self, logs=[]):
+    def __init__(self, logs=None):
+        if logs is None:
+            logs = []
         self.logs = logs
 
     def add_log(self, log: dict):
