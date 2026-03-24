@@ -1,5 +1,7 @@
 class LogAggregator:
-    def __init__(self, logs=[]):
+    def __init__(self, logs=None):
+        if logs is None:
+            logs = []
         self.logs = logs
 
     def add_log(self, log: dict):
@@ -19,4 +21,3 @@ class LogAggregator:
 
     def unique_users(self) -> int:
         return len({log["user_id"] for log in self.logs})
-

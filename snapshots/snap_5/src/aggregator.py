@@ -8,7 +8,7 @@ class LogAggregator:
     def error_rate(self) -> float:
         if not self.logs:
             return 0.0
-        errors = sum(1 for log in self.logs if log["status_code"]  > 400)
+        errors = sum(1 for log in self.logs if log["status_code"]  >= 400)
         return errors / len(self.logs)
 
     def avg_response_time(self) -> float:
@@ -19,4 +19,3 @@ class LogAggregator:
 
     def unique_users(self) -> int:
         return len({log["user_id"] for log in self.logs})
-

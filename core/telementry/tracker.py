@@ -7,7 +7,9 @@ from core.telementry.analyzer import (
     compute_iteration_efficiency,
     compute_adaptability,
     compute_recovery_score,
-    compute_composite
+    interpret_iteration,
+    interpret_adaptability,
+    interpret_recovery
 )
 
 
@@ -57,16 +59,31 @@ class SessionTracker:
             "time_to_mutation_pass": (
                 self.mutation_pass_time - self.start_time
                 if self.mutation_pass_time else None
-           ),
+        ),
             "time_between_runs": compute_time_between_runs(self.events),
             "recovery": compute_recovery(self.events),
-            "progress": compute_progress(self.events),
             "scope": compute_scope_violations(self.events),
         }
 
-        evaluation = compute_composite(self.events, base)
+        # ---- SCORES ----
+        iteration_score = compute_iteration_efficiency(self.events, "core")
+        adaptability_score = compute_adaptability(base)
+        recovery_score = compute_recovery_score(base["recovery"])
+
+        scores = {
+            "iteration": iteration_score,
+            "adaptability": adaptability_score,
+            "recovery": recovery_score
+        }
+
+    # ---- INTERPRETATION ----
+        interpretation = {
+            "iteration": interpret_iteration(iteration_score),
+            "adaptability": interpret_adaptability(adaptability_score),
+            "recovery": interpret_recovery(recovery_score)
+        }
 
         return {
-            **base,
-            "evaluation": evaluation
+            "scores": scores,
+            "interpretation": interpretation
         }
