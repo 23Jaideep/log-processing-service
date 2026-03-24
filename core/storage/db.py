@@ -97,3 +97,73 @@ def save_events(events):
 
     conn.commit()
     conn.close()
+
+
+def load_session(session_id):
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM sessions WHERE session_id = ?", (session_id,))
+    row = cur.fetchone()
+
+    conn.close()
+
+    if not row:
+        return None
+
+    return {
+        "session_id": row[0],
+        "candidate_id": row[1],
+        "task_name": row[2],
+        "start_time": row[3],
+        "end_time": row[4],
+        "summary": json.loads(row[5])
+    }
+
+
+def load_events(session_id):
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM events WHERE session_id = ?", (session_id,))
+    rows = cur.fetchall()
+
+    conn.close()
+
+    events = []
+    for r in rows:
+        events.append({
+            "timestamp": r[2],
+            "event_type": r[3],
+            "phase": r[4],
+            "passed": r[5],
+            "tests_passed": r[6],
+            "diff": json.loads(r[7]) if r[7] else None
+        })
+
+    return events
+
+
+def load_sessions(candidate_id):
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM sessions WHERE candidate_id = ? ORDER BY start_time",
+        (candidate_id,)
+    )
+    rows = cur.fetchall()
+
+    conn.close()
+
+    sessions = []
+    for r in rows:
+        sessions.append({
+            "session_id": r[0],
+            "task_name": r[2],
+            "start_time": r[3],
+            "end_time": r[4],
+            "summary": json.loads(r[5])
+        })
+
+    return sessions
